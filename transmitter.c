@@ -1,6 +1,8 @@
 /* 
  * File:   transmitter.c
- * Author: daniel
+ * Author: Daniel Huelsman 
+ * Class: Data Communications 
+ * Project 1
  *
  * Created on September 20, 2011, 12:42 PM
  */
@@ -33,7 +35,6 @@ int main(int argc, char** argv) {
      char* dataSbin;     // Size of the data block in binary.
      char* extBin;
      int buffin;         // Input buffer
-     char garbage[1];
 
      /*
       * counter i, Buffer Length, Number of Frames, Data Size.
@@ -41,7 +42,7 @@ int main(int argc, char** argv) {
      int i, blen, framen, dataSize;
 
      while(1){
-    /** Get the file location, file name and character to replace space with */
+    /** Get the file location, file name and file extension */
         printf("Enter 'exit' for dir to quit. \n");
         printf("Enter directory of the file: \n Ex: /home/user/\n");
         fgets(dir,sizeof(dir), stdin);
@@ -58,6 +59,7 @@ int main(int argc, char** argv) {
         if(strncmp(ext,"exit",4)==0){
             break;
         }
+        /*Replace newline characters with null characters*/
         if(dir[strlen(dir)-1]== '\n'){
             dir[strlen(dir)-1]= '\0';
         }
@@ -69,16 +71,17 @@ int main(int argc, char** argv) {
         }
 
 
-        /** Prep the strings for the server thread */
+        /*Prep the filename*/
         strcpy(fileName,dir);
         strcat(fileName,userFile);
         strcat(fileName,ext);
         
-        
+        /*Open the input file stream*/
         fins = fopen(fileName, "rb");
         fos = fopen("output.bin", "wb");
         if (fins==NULL||fos==NULL) {fputs ("File error",stderr); exit (1);}
         
+        /*Find the file Size*/
         fseek (fins , 0 , SEEK_END);
         fSize = ftell (fins);
         rewind (fins);      
@@ -87,7 +90,7 @@ int main(int argc, char** argv) {
         binBuffer = (char*) malloc (sizeof(char)*(blen));
         if (binBuffer == NULL) {fputs ("Memory error",stderr); exit (2);}
      
-
+        /*Read the file into a Buffer*/
         while((buffin=fgetc(fins))!=EOF){
             Convert2Bin(buffin, cBuffer);
             strncat(binBuffer, cBuffer, 8);
@@ -96,6 +99,7 @@ int main(int argc, char** argv) {
         extBin = (char*) malloc (sizeof(char)*(32));
         if (extBin == NULL) {fputs ("Memory error",stderr); exit (2);}
         
+        /*Convert extension into binary*/
         for(i=0;i<4;i++){
             Convert2Bin(ext[i],cBuffer);
             strncat(extBin, cBuffer, 8);
@@ -107,23 +111,27 @@ int main(int argc, char** argv) {
         dataSbin = (char*) malloc (sizeof(char)*(8));
           if (dataSbin == NULL) {fputs ("Memory error",stderr); exit (2);}
         
-        strncpy(frame, buffsyn, 8);
-        
-        Convert2Bin(32,dataSbin);
-        
+        /*Pack the extension into the first frame*/
+        strncpy(frame, buffsyn, 8);        
+        Convert2Bin(32,dataSbin);        
         strncat(frame, dataSbin, 8);
         strncat(frame, extBin, 32);
         strncat(frame, buffsyn, 8);
         
-        
+        /*Write the first frame to the file*/
         fwrite(frame,1,56,fos);
 
+        /*Find the number of Frames*/
         if(blen%64==0){
            framen = blen/64;
         }else{
            framen = blen/64 + 1;
         }
         
+        /*
+         * Create all of the frames and write each frame to the file
+         * as it is created
+         */
         for(i= 0;i<framen;i++){
           frame = (char*) malloc (sizeof(char)*(88));
           if (frame == NULL) {fputs ("Memory error",stderr); exit (2);}
@@ -133,23 +141,22 @@ int main(int argc, char** argv) {
           
           strncpy(frame, buffsyn,8);
           
+          /*Figure out if it is a full 64 bits or not*/
           if (i==framen-1 && blen%64!=0){
               dataSize = blen%64;
           }else{
               dataSize = 64;
           }
           
-          Convert2Bin(dataSize, dataSbin);
-          
+          Convert2Bin(dataSize, dataSbin);         
           strncat(frame, dataSbin, 8);
           strncat(frame, binBuffer + i*64,dataSize);
           strncat(frame, buffsyn, 8);
           
-
           fwrite(frame,1,dataSize+24,fos); // Writes to the output file.
         }
 
-        
+        /*Close file streams and free buffer*/
         fclose(fins);
         fclose(fos);
         free(binBuffer);
