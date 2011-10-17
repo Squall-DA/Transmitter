@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
      FILE* fos;          // Output file stream
      long fSize;         // Size of the file in characters
      char*  binBuffer;      // Buffer of the file converted to binary.
-     char buffsyn[8] = "10010110"; // Sync Character in binary.
+     char buffsyn[8] = "00010110"; // Sync Character in binary.
      char* frame;        // What its name says. 1 Frame 
      char cBuffer[8],  ext[256];          // Input character in binary
      char* dataSbin;     // Size of the data block in binary.
@@ -171,11 +171,11 @@ int main(int argc, char** argv) {
  * Converts and integer into a binary string to make it
  * editable by humans and to symbolized the binary data.
  */ 
-void Convert2Bin(int bin, char str[8])
-{
+void Convert2Bin(int bin, char strOut[12]){
     unsigned int mask;      // used to check each individual bit, 
                             //    unsigned to alleviate sign 
                             //    extension problems
+    char str[8];
     int parity,i;
     parity = 0;
     i=0;
@@ -192,8 +192,77 @@ void Convert2Bin(int bin, char str[8])
         mask >>= 1;         // shift the mask 1 bit
     }
     if(parity%2==1){
-        str[0]='1';               // Add the Leading parity bit
+        str[0]='0';               // Add the Leading parity bit
     }else{
-        str[0]='0';
+        str[0]='1';
+    }
+    
+    HammingEncode(str,strOut);
+}
+
+void HammingEncode (char str[8],char crstr[12]){
+    int pOne = 0, pTwo=0, pFour=0, pEight=0;
+    char hstr[13];
+    int i, pCount=0;
+    
+    if (str[0]=='1'){
+        pOne++;
+        pTwo++;
+    }if (str[1]=='1'){
+        pOne++;
+        pFour++;
+    }if (str[2]=='1'){
+        pTwo++;
+        pFour++;
+    }if (str[3]=='1'){
+        pOne++;
+        pTwo++;
+        pFour++;
+    }if (str[4]=='1'){
+        pOne++;
+        pEight++;
+    }if (str[5]=='1'){
+        pTwo++;
+        pEight++;
+    }if (str[6]=='1'){
+        pOne++;
+        pTwo++;
+        pEight++;
+    }if (str[7]=='1'){
+        pFour++;
+        pEight++;
+    }
+    if(pOne%2==1){
+        hstr[1]='0';
+    }else
+        hstr[1]='1';
+    if(pTwo%2==1){
+        hstr[2]='0';
+    }else
+        hstr[2]='1';
+    hstr[3]=str[0];
+    if(pFour%2==1){
+        hstr[4]='0';
+    }else
+        hstr[4]='1';
+    hstr[5]=str[1];
+    hstr[6]=str[2];
+    hstr[7]=str[3];
+     if(pEight%2==1){
+        hstr[8]='0';
+    }else
+        hstr[8]='1';
+    hstr[9]=str[4];
+    hstr[10]=str[5];
+    hstr[11]=str[6];
+    hstr[12]=str[7];
+    
+    for(i=1; i<13; i++){
+        if(hstr[i]=='1'){
+            pCount++;
+        }
+    }
+    if(pCount%2!=1){
+        hstr[0]='1';
     }
 }
