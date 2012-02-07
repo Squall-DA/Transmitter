@@ -151,6 +151,10 @@ int main(int argc, char** argv) {
         strncat(frame, ceBuffer, 13);
         
         /*Write the first frame to the file*/
+        /* Encoded in Manchester Encoding 
+         * A 1 represents a change from low to high
+         * A 0 represents a change from High to low
+         */
         fwrite(frame,1,91,fos);
 
         /*Find the number of Frames*/
@@ -200,6 +204,10 @@ int main(int argc, char** argv) {
             }
           strncat(frame, ceBuffer, 13);
           
+          /* Encoded in Manchester Encoding 
+         * A 1 represents a change from low to high
+         * A 0 represents a change from High to low
+         */          
           fwrite(frame,1,dataSize+39,fos); // Writes to the output file.
         }
 
